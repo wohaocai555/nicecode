@@ -1,0 +1,35 @@
+*.iml
+
+# Gradle and generated build files
+.gradle/
+.gradle-user/
+**/build/
+app/release/
+
+# Local machine configuration
+local.properties
+.gitdata/
+
+# Android Studio
+.idea/
+.kotlin/
+
+# Native and test outputs
+.cxx/
+.externalNativeBuild/
+captures/
+
+# Local tools and environments
+/AVD/
+/Plugins/
+/SDKhome/
+/envv/
+/envv-1/
+/envv-2/
+/node/
+/jdk-11/
+
+# Temporary and operating system files
+.artifacts/
+.DS_Store
+Thumbs.db
