@@ -1,0 +1,23 @@
+*.iml
+
+# Gradle and generated outputs
+.gradle/
+.gradle-user/
+**/build/
+app/release/
+
+# Local machine configuration
+local.properties
+.gitdata/
+
+# Android Studio and Kotlin tooling
+.idea/
+.kotlin/
+.cxx/
+.externalNativeBuild/
+captures/
+
+# Temporary and operating system files
+.DS_Store
+Thumbs.db
+*.log
