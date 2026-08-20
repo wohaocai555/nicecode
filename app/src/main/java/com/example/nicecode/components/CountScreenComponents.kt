@@ -268,6 +268,30 @@ internal fun CountMainGroupCheckbox(
     }
 }
 
+@Composable
+internal fun DigitPositionSelection(
+    labels: List<String>,
+    checkedValues: List<Boolean>,
+    compactWidth: Boolean,
+    onCheckedChange: (Int, Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        labels.forEachIndexed { index, label ->
+            CountPreserveCheckbox(
+                checked = checkedValues.getOrElse(index) { false },
+                label = label,
+                labelFontSize = if (compactWidth) 16.sp else 18.sp,
+                compact = compactWidth,
+                onCheckedChange = { checked -> onCheckedChange(index, checked) }
+            )
+        }
+    }
+}
+
 private fun formatDigitDisplayValue(value: String): String {
     return value.toCharArray().joinToString("\uff0c")
 }

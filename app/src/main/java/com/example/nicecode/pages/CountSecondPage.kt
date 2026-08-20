@@ -35,14 +35,15 @@ internal fun CountSecondPage(
     undeterminedSumDigit: String,
     undeterminedKeep: Boolean,
     specifiedSumConditions: List<SpecifiedSumFilterCondition>,
-    largeCount: String,
-    largeCountKeep: Boolean,
-    primeCount: String,
-    primeCountKeep: Boolean,
-    oddCount: String,
-    oddCountKeep: Boolean,
+    largePositions: List<Boolean>,
+    largeKeep: Boolean,
+    primePositions: List<Boolean>,
+    primeKeep: Boolean,
+    oddPositions: List<Boolean>,
+    oddKeep: Boolean,
     repeatConditions: List<RepeatValueFilterCondition>,
-    confirmFixedCount: String,
+    confirmFixedPositions: List<Boolean>,
+    confirmFixedSeparateDisplay: Boolean,
     expandedSection: Int?,
     onBackClick: () -> Unit,
     onToggleSection: (Int) -> Unit,
@@ -56,17 +57,18 @@ internal fun CountSecondPage(
     onSpecifiedKeepChange: (Int, Boolean) -> Unit,
     onAddSpecifiedCondition: () -> Unit,
     onRemoveSpecifiedCondition: () -> Unit,
-    onLargeCountClick: () -> Unit,
-    onLargeCountKeepChange: (Boolean) -> Unit,
-    onPrimeCountClick: () -> Unit,
-    onPrimeCountKeepChange: (Boolean) -> Unit,
-    onOddCountClick: () -> Unit,
-    onOddCountKeepChange: (Boolean) -> Unit,
+    onLargePositionChange: (Int, Boolean) -> Unit,
+    onLargeKeepChange: (Boolean) -> Unit,
+    onPrimePositionChange: (Int, Boolean) -> Unit,
+    onPrimeKeepChange: (Boolean) -> Unit,
+    onOddPositionChange: (Int, Boolean) -> Unit,
+    onOddKeepChange: (Boolean) -> Unit,
     onRepeatPositionChange: (Int, Int, Boolean) -> Unit,
     onRepeatKeepChange: (Int, Boolean) -> Unit,
     onAddRepeatCondition: () -> Unit,
     onRemoveRepeatCondition: () -> Unit,
-    onConfirmFixedCountClick: () -> Unit,
+    onConfirmFixedPositionChange: (Int, Boolean) -> Unit,
+    onConfirmFixedSeparateDisplayChange: (Boolean) -> Unit,
     onStartFilterClick: () -> Unit,
 ) {
     BoxWithConstraints(
@@ -224,38 +226,29 @@ internal fun CountSecondPage(
                     headerHorizontalPadding = if (compactWidth) 14.dp else 18.dp,
                     headerVerticalPadding = if (compactHeight) 12.dp else 16.dp
                 ) {
-                    CountFilterInputRow(
-                        label = "\u5927\u6570\u4e2a\u6570",
-                        value = largeCount,
-                        onInputClick = onLargeCountClick,
-                        trailing = {
-                            CountPreserveCheckbox(
-                                checked = largeCountKeep,
-                                onCheckedChange = onLargeCountKeepChange
-                            )
-                        }
+                    PropertyPositionFilterContent(
+                        label = "\u5927\u6570",
+                        positions = largePositions,
+                        keep = largeKeep,
+                        compactWidth = compactWidth,
+                        onPositionChange = onLargePositionChange,
+                        onKeepChange = onLargeKeepChange
                     )
-                    CountFilterInputRow(
-                        label = "\u8d28\u6570\u4e2a\u6570",
-                        value = primeCount,
-                        onInputClick = onPrimeCountClick,
-                        trailing = {
-                            CountPreserveCheckbox(
-                                checked = primeCountKeep,
-                                onCheckedChange = onPrimeCountKeepChange
-                            )
-                        }
+                    PropertyPositionFilterContent(
+                        label = "\u8d28\u6570",
+                        positions = primePositions,
+                        keep = primeKeep,
+                        compactWidth = compactWidth,
+                        onPositionChange = onPrimePositionChange,
+                        onKeepChange = onPrimeKeepChange
                     )
-                    CountFilterInputRow(
-                        label = "\u5947\u6570\u4e2a\u6570",
-                        value = oddCount,
-                        onInputClick = onOddCountClick,
-                        trailing = {
-                            CountPreserveCheckbox(
-                                checked = oddCountKeep,
-                                onCheckedChange = onOddCountKeepChange
-                            )
-                        }
+                    PropertyPositionFilterContent(
+                        label = "\u5947\u6570",
+                        positions = oddPositions,
+                        keep = oddKeep,
+                        compactWidth = compactWidth,
+                        onPositionChange = onOddPositionChange,
+                        onKeepChange = onOddKeepChange
                     )
                 }
 
@@ -319,10 +312,18 @@ internal fun CountSecondPage(
                     headerHorizontalPadding = if (compactWidth) 14.dp else 18.dp,
                     headerVerticalPadding = if (compactHeight) 12.dp else 16.dp
                 ) {
-                    CountFilterInputRow(
-                        label = "\u5b9a\u6570\u4e2a\u6570",
-                        value = confirmFixedCount,
-                        onInputClick = onConfirmFixedCountClick
+                    DigitPositionSelection(
+                        labels = digitPositionLabels,
+                        checkedValues = confirmFixedPositions,
+                        compactWidth = compactWidth,
+                        onCheckedChange = onConfirmFixedPositionChange
+                    )
+                    CountPreserveCheckbox(
+                        checked = confirmFixedSeparateDisplay,
+                        label = "\u5355\u72ec\u663e\u793a",
+                        labelFontSize = if (compactWidth) 16.sp else 18.sp,
+                        compact = compactWidth,
+                        onCheckedChange = onConfirmFixedSeparateDisplayChange
                     )
                 }
             }
@@ -346,6 +347,40 @@ internal fun CountSecondPage(
 }
 
 @Composable
+private fun PropertyPositionFilterContent(
+    label: String,
+    positions: List<Boolean>,
+    keep: Boolean,
+    compactWidth: Boolean,
+    onPositionChange: (Int, Boolean) -> Unit,
+    onKeepChange: (Boolean) -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            text = label,
+            color = FortuneTextPrimary,
+            fontSize = if (compactWidth) 18.sp else 20.sp,
+            fontWeight = FontWeight.Medium
+        )
+        DigitPositionSelection(
+            labels = digitPositionLabels,
+            checkedValues = positions,
+            compactWidth = compactWidth,
+            onCheckedChange = onPositionChange
+        )
+        CountPreserveCheckbox(
+            checked = keep,
+            labelFontSize = if (compactWidth) 16.sp else 18.sp,
+            compact = compactWidth,
+            onCheckedChange = onKeepChange
+        )
+    }
+}
+
+@Composable
 private fun SpecifiedSumConditionContent(
     condition: SpecifiedSumFilterCondition,
     conditionIndex: Int,
@@ -354,7 +389,7 @@ private fun SpecifiedSumConditionContent(
     onSumClick: (Int) -> Unit,
     onKeepChange: (Int, Boolean) -> Unit,
 ) {
-    PositionCheckboxGrid(
+    DigitPositionSelection(
         labels = digitPositionLabels,
         checkedValues = condition.positions,
         compactWidth = compactWidth,
@@ -384,7 +419,7 @@ private fun RepeatValueConditionContent(
     onPositionChange: (Int, Int, Boolean) -> Unit,
     onKeepChange: (Int, Boolean) -> Unit,
 ) {
-    PositionCheckboxGrid(
+    DigitPositionSelection(
         labels = digitPositionLabels,
         checkedValues = condition.positions,
         compactWidth = compactWidth,
@@ -445,33 +480,6 @@ private fun CountFilterInputRow(
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun PositionCheckboxGrid(
-    labels: List<String>,
-    checkedValues: List<Boolean>,
-    compactWidth: Boolean,
-    onCheckedChange: (Int, Boolean) -> Unit,
-) {
-    val labelFontSize = if (compactWidth) 16.sp else 18.sp
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = if (compactWidth) Arrangement.Start else Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        labels.forEachIndexed { index, label ->
-            CountPreserveCheckbox(
-                checked = checkedValues[index],
-                label = label,
-                labelFontSize = labelFontSize,
-                modifier = if (compactWidth) Modifier.weight(1f) else Modifier,
-                compact = compactWidth,
-                onCheckedChange = { checked -> onCheckedChange(index, checked) }
-            )
         }
     }
 }

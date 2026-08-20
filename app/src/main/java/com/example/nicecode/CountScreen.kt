@@ -27,10 +27,6 @@ private sealed interface CountEditTarget {
     data object UndeterminedCount : CountEditTarget
     data object UndeterminedSumDigit : CountEditTarget
     data class SpecifiedSumDigit(val conditionIndex: Int) : CountEditTarget
-    data object LargeCount : CountEditTarget
-    data object PrimeCount : CountEditTarget
-    data object OddCount : CountEditTarget
-    data object ConfirmFixedCount : CountEditTarget
 }
 
 @Composable
@@ -53,16 +49,17 @@ internal fun CountScreen(
     var specifiedSumConditions by remember {
         mutableStateOf(listOf(SpecifiedSumFilterCondition()))
     }
-    var largeCount by remember { mutableStateOf("") }
-    var largeCountKeep by remember { mutableStateOf(false) }
-    var primeCount by remember { mutableStateOf("") }
-    var primeCountKeep by remember { mutableStateOf(false) }
-    var oddCount by remember { mutableStateOf("") }
-    var oddCountKeep by remember { mutableStateOf(false) }
+    var largePositions by remember { mutableStateOf(List(4) { false }) }
+    var largeKeep by remember { mutableStateOf(false) }
+    var primePositions by remember { mutableStateOf(List(4) { false }) }
+    var primeKeep by remember { mutableStateOf(false) }
+    var oddPositions by remember { mutableStateOf(List(4) { false }) }
+    var oddKeep by remember { mutableStateOf(false) }
     var repeatConditions by remember {
         mutableStateOf(listOf(RepeatValueFilterCondition()))
     }
-    var confirmFixedCount by remember { mutableStateOf("") }
+    var confirmFixedPositions by remember { mutableStateOf(List(4) { false }) }
+    var confirmFixedSeparateDisplay by remember { mutableStateOf(false) }
     var expandedSection by remember { mutableStateOf<Int?>(null) }
     var editingTarget by remember { mutableStateOf<CountEditTarget?>(null) }
     var keyboardWarning by remember { mutableStateOf<String?>(null) }
@@ -111,14 +108,15 @@ internal fun CountScreen(
                     undeterminedSumDigit = undeterminedSumDigit,
                     undeterminedKeep = undeterminedKeep,
                     specifiedSumConditions = specifiedSumConditions,
-                    largeCount = largeCount,
-                    largeCountKeep = largeCountKeep,
-                    primeCount = primeCount,
-                    primeCountKeep = primeCountKeep,
-                    oddCount = oddCount,
-                    oddCountKeep = oddCountKeep,
+                    largePositions = largePositions,
+                    largeKeep = largeKeep,
+                    primePositions = primePositions,
+                    primeKeep = primeKeep,
+                    oddPositions = oddPositions,
+                    oddKeep = oddKeep,
                     repeatConditions = repeatConditions,
-                    confirmFixedCount = confirmFixedCount,
+                    confirmFixedPositions = confirmFixedPositions,
+                    confirmFixedSeparateDisplay = confirmFixedSeparateDisplay,
                     expandedSection = expandedSection,
                     onBackClick = { currentPage = CountPage.FIRST },
                     onToggleSection = { index ->
@@ -177,21 +175,24 @@ internal fun CountScreen(
                             }
                         }
                     },
-                    onLargeCountClick = {
-                        keyboardWarning = null
-                        editingTarget = CountEditTarget.LargeCount
+                    onLargePositionChange = { index, checked ->
+                        largePositions = largePositions.toMutableList().also { values ->
+                            values[index] = checked
+                        }
                     },
-                    onLargeCountKeepChange = { largeCountKeep = it },
-                    onPrimeCountClick = {
-                        keyboardWarning = null
-                        editingTarget = CountEditTarget.PrimeCount
+                    onLargeKeepChange = { largeKeep = it },
+                    onPrimePositionChange = { index, checked ->
+                        primePositions = primePositions.toMutableList().also { values ->
+                            values[index] = checked
+                        }
                     },
-                    onPrimeCountKeepChange = { primeCountKeep = it },
-                    onOddCountClick = {
-                        keyboardWarning = null
-                        editingTarget = CountEditTarget.OddCount
+                    onPrimeKeepChange = { primeKeep = it },
+                    onOddPositionChange = { index, checked ->
+                        oddPositions = oddPositions.toMutableList().also { values ->
+                            values[index] = checked
+                        }
                     },
-                    onOddCountKeepChange = { oddCountKeep = it },
+                    onOddKeepChange = { oddKeep = it },
                     onRepeatPositionChange = { conditionIndex, positionIndex, checked ->
                         repeatConditions = repeatConditions.toMutableList().also { conditions ->
                             val condition = conditions[conditionIndex]
@@ -217,10 +218,12 @@ internal fun CountScreen(
                             repeatConditions = repeatConditions.dropLast(1)
                         }
                     },
-                    onConfirmFixedCountClick = {
-                        keyboardWarning = null
-                        editingTarget = CountEditTarget.ConfirmFixedCount
+                    onConfirmFixedPositionChange = { index, checked ->
+                        confirmFixedPositions = confirmFixedPositions.toMutableList().also { values ->
+                            values[index] = checked
+                        }
                     },
+                    onConfirmFixedSeparateDisplayChange = { confirmFixedSeparateDisplay = it },
                     onStartFilterClick = {
                         val resultsToDisplay = applyCountSecondPageFilters(
                             baseResults = basePermutationResults,
@@ -230,14 +233,15 @@ internal fun CountScreen(
                             undeterminedSumDigit = undeterminedSumDigit,
                             undeterminedKeep = undeterminedKeep,
                             specifiedSumConditions = specifiedSumConditions,
-                            largeCount = largeCount,
-                            largeCountKeep = largeCountKeep,
-                            primeCount = primeCount,
-                            primeCountKeep = primeCountKeep,
-                            oddCount = oddCount,
-                            oddCountKeep = oddCountKeep,
+                            largePositions = largePositions,
+                            largeKeep = largeKeep,
+                            primePositions = primePositions,
+                            primeKeep = primeKeep,
+                            oddPositions = oddPositions,
+                            oddKeep = oddKeep,
                             repeatConditions = repeatConditions,
-                            confirmFixedCount = confirmFixedCount
+                            confirmFixedPositions = confirmFixedPositions,
+                            confirmFixedSeparateDisplay = confirmFixedSeparateDisplay
                         )
                         displayedResults = resultsToDisplay
                         historyViewModel.recordHistory(results = resultsToDisplay)
@@ -268,14 +272,15 @@ internal fun CountScreen(
                         undeterminedSumDigit = ""
                         undeterminedKeep = false
                         specifiedSumConditions = listOf(SpecifiedSumFilterCondition())
-                        largeCount = ""
-                        largeCountKeep = false
-                        primeCount = ""
-                        primeCountKeep = false
-                        oddCount = ""
-                        oddCountKeep = false
+                        largePositions = List(4) { false }
+                        largeKeep = false
+                        primePositions = List(4) { false }
+                        primeKeep = false
+                        oddPositions = List(4) { false }
+                        oddKeep = false
                         repeatConditions = listOf(RepeatValueFilterCondition())
-                        confirmFixedCount = ""
+                        confirmFixedPositions = List(4) { false }
+                        confirmFixedSeparateDisplay = false
                         expandedSection = null
                         keyboardWarning = null
                         editingTarget = null
@@ -403,10 +408,6 @@ internal fun CountScreen(
                 undeterminedCount = undeterminedCount,
                 undeterminedSumDigit = undeterminedSumDigit,
                 specifiedSumConditions = specifiedSumConditions,
-                largeCount = largeCount,
-                primeCount = primeCount,
-                oddCount = oddCount,
-                confirmFixedCount = confirmFixedCount
             ),
             warningMessage = keyboardWarning,
             onDismiss = {
@@ -487,41 +488,6 @@ internal fun CountScreen(
                         }
                     }
 
-                    CountEditTarget.LargeCount -> {
-                        if (isLimitedCountInputInvalid(largeCount, digit)) {
-                            keyboardWarning = "\u4e2a\u6570\u8d85\u8fc74"
-                        } else {
-                            keyboardWarning = null
-                            largeCount = digit
-                        }
-                    }
-
-                    CountEditTarget.PrimeCount -> {
-                        if (isLimitedCountInputInvalid(primeCount, digit)) {
-                            keyboardWarning = "\u4e2a\u6570\u8d85\u8fc74"
-                        } else {
-                            keyboardWarning = null
-                            primeCount = digit
-                        }
-                    }
-
-                    CountEditTarget.OddCount -> {
-                        if (isLimitedCountInputInvalid(oddCount, digit)) {
-                            keyboardWarning = "\u4e2a\u6570\u8d85\u8fc74"
-                        } else {
-                            keyboardWarning = null
-                            oddCount = digit
-                        }
-                    }
-
-                    CountEditTarget.ConfirmFixedCount -> {
-                        if (isLimitedCountInputInvalid(confirmFixedCount, digit)) {
-                            keyboardWarning = "\u4e2a\u6570\u8d85\u8fc74"
-                        } else {
-                            keyboardWarning = null
-                            confirmFixedCount = digit
-                        }
-                    }
                 }
             },
             onDeleteClick = {
@@ -562,21 +528,6 @@ internal fun CountScreen(
                         }
                     }
 
-                    CountEditTarget.LargeCount -> {
-                        largeCount = largeCount.dropLast(1)
-                    }
-
-                    CountEditTarget.PrimeCount -> {
-                        primeCount = primeCount.dropLast(1)
-                    }
-
-                    CountEditTarget.OddCount -> {
-                        oddCount = oddCount.dropLast(1)
-                    }
-
-                    CountEditTarget.ConfirmFixedCount -> {
-                        confirmFixedCount = confirmFixedCount.dropLast(1)
-                    }
                 }
             },
             onClearClick = {
@@ -614,21 +565,6 @@ internal fun CountScreen(
                         }
                     }
 
-                    CountEditTarget.LargeCount -> {
-                        largeCount = ""
-                    }
-
-                    CountEditTarget.PrimeCount -> {
-                        primeCount = ""
-                    }
-
-                    CountEditTarget.OddCount -> {
-                        oddCount = ""
-                    }
-
-                    CountEditTarget.ConfirmFixedCount -> {
-                        confirmFixedCount = ""
-                    }
                 }
             }
         )
@@ -643,10 +579,6 @@ private fun currentValueForTarget(
     undeterminedCount: String,
     undeterminedSumDigit: String,
     specifiedSumConditions: List<SpecifiedSumFilterCondition>,
-    largeCount: String,
-    primeCount: String,
-    oddCount: String,
-    confirmFixedCount: String,
 ): String {
     return when (target) {
         is CountEditTarget.PageOneGroup -> pageOneGroupValues[target.index]
@@ -657,10 +589,6 @@ private fun currentValueForTarget(
         is CountEditTarget.SpecifiedSumDigit -> {
             specifiedSumConditions[target.conditionIndex].sumDigits
         }
-        CountEditTarget.LargeCount -> largeCount
-        CountEditTarget.PrimeCount -> primeCount
-        CountEditTarget.OddCount -> oddCount
-        CountEditTarget.ConfirmFixedCount -> confirmFixedCount
     }
 }
 

@@ -21,14 +21,15 @@ internal fun applyCountSecondPageFilters(
     undeterminedSumDigit: String,
     undeterminedKeep: Boolean,
     specifiedSumConditions: List<SpecifiedSumFilterCondition>,
-    largeCount: String,
-    largeCountKeep: Boolean,
-    primeCount: String,
-    primeCountKeep: Boolean,
-    oddCount: String,
-    oddCountKeep: Boolean,
+    largePositions: List<Boolean>,
+    largeKeep: Boolean,
+    primePositions: List<Boolean>,
+    primeKeep: Boolean,
+    oddPositions: List<Boolean>,
+    oddKeep: Boolean,
     repeatConditions: List<RepeatValueFilterCondition>,
-    confirmFixedCount: String,
+    confirmFixedPositions: List<Boolean>,
+    confirmFixedSeparateDisplay: Boolean,
 ): List<String> {
     if (baseResults.isEmpty()) {
         return emptyList()
@@ -55,12 +56,12 @@ internal fun applyCountSecondPageFilters(
     }
     applyPropertyFilters(
         filteredResults = filteredResults,
-        largeCount = largeCount,
-        largeCountKeep = largeCountKeep,
-        primeCount = primeCount,
-        primeCountKeep = primeCountKeep,
-        oddCount = oddCount,
-        oddCountKeep = oddCountKeep
+        largePositions = largePositions,
+        largeKeep = largeKeep,
+        primePositions = primePositions,
+        primeKeep = primeKeep,
+        oddPositions = oddPositions,
+        oddKeep = oddKeep
     )
     repeatConditions.forEach { condition ->
         applyRepeatValueFilter(
@@ -68,13 +69,22 @@ internal fun applyCountSecondPageFilters(
             condition = condition
         )
     }
-    val confirmedResults = applyConfirmFixedCount(
+    val confirmedResults = applyConfirmFixedPositions(
         filteredResults = filteredResults,
-        confirmFixedCount = confirmFixedCount
+        selectedPositions = confirmFixedPositions
     )
 
-    val numericResults = filteredResults.toList().sorted()
-    val confirmedResultList = confirmedResults.toList().sorted()
+    if (confirmedResults.isEmpty()) {
+        return filteredResults.toList().sorted()
+    }
+
+    if (confirmFixedSeparateDisplay) {
+        return confirmedResults.toList().sorted()
+    }
+
+    filteredResults.addAll(confirmedResults)
+    val numericResults = filteredResults.filterNot { result -> 'X' in result }.sorted()
+    val confirmedResultList = filteredResults.filter { result -> 'X' in result }.sorted()
     return numericResults + confirmedResultList
 }
 
@@ -219,50 +229,50 @@ private fun matchesSpecifiedSumFilter(
 
 private fun applyPropertyFilters(
     filteredResults: MutableSet<String>,
-    largeCount: String,
-    largeCountKeep: Boolean,
-    primeCount: String,
-    primeCountKeep: Boolean,
-    oddCount: String,
-    oddCountKeep: Boolean,
+    largePositions: List<Boolean>,
+    largeKeep: Boolean,
+    primePositions: List<Boolean>,
+    primeKeep: Boolean,
+    oddPositions: List<Boolean>,
+    oddKeep: Boolean,
 ) {
-    applyPropertyCountFilter(
+    applyPropertyPositionFilter(
         filteredResults = filteredResults,
-        expectedCountText = largeCount,
-        keepMatchedResults = largeCountKeep
+        selectedPositions = largePositions,
+        keepMatchedResults = largeKeep
     ) { digit ->
         digit >= 5
     }
-    applyPropertyCountFilter(
+    applyPropertyPositionFilter(
         filteredResults = filteredResults,
-        expectedCountText = primeCount,
-        keepMatchedResults = primeCountKeep
+        selectedPositions = primePositions,
+        keepMatchedResults = primeKeep
     ) { digit ->
         digit == 1 || digit == 2 || digit == 3 || digit == 5 || digit == 7
     }
-    applyPropertyCountFilter(
+    applyPropertyPositionFilter(
         filteredResults = filteredResults,
-        expectedCountText = oddCount,
-        keepMatchedResults = oddCountKeep
+        selectedPositions = oddPositions,
+        keepMatchedResults = oddKeep
     ) { digit ->
         digit % 2 != 0
     }
 }
 
-private fun applyPropertyCountFilter(
+private fun applyPropertyPositionFilter(
     filteredResults: MutableSet<String>,
-    expectedCountText: String,
+    selectedPositions: List<Boolean>,
     keepMatchedResults: Boolean,
     predicate: (Int) -> Boolean,
 ) {
-    if (expectedCountText.isEmpty()) {
+    val selectedIndexes = selectedPositions.mapIndexedNotNull { index, isSelected ->
+        index.takeIf { isSelected && index < countNumberLength }
+    }
+    if (selectedIndexes.isEmpty()) {
         return
     }
 
-    val expectedCount = expectedCountText.toIntOrNull() ?: return
-    if (expectedCount !in 0..countNumberLength) {
-        return
-    }
+    val selectedIndexSet = selectedIndexes.toSet()
 
     filteredResults.removeAll { result ->
         val digits = result.mapNotNull { char -> char.digitToIntOrNull() }
@@ -270,8 +280,10 @@ private fun applyPropertyCountFilter(
             return@removeAll true
         }
 
-        val matchedCount = digits.count(predicate)
-        val isMatched = matchedCount == expectedCount
+        val isMatched = digits.indices.all { index ->
+            val hasProperty = predicate(digits[index])
+            if (index in selectedIndexSet) hasProperty else !hasProperty
+        }
         shouldDeleteResult(
             isMatched = isMatched,
             keepMatchedResults = keepMatchedResults
@@ -306,20 +318,17 @@ private fun applyRepeatValueFilter(
     }
 }
 
-private fun applyConfirmFixedCount(
+private fun applyConfirmFixedPositions(
     filteredResults: MutableSet<String>,
-    confirmFixedCount: String,
+    selectedPositions: List<Boolean>,
 ): Set<String> {
-    if (confirmFixedCount.isEmpty()) {
+    val selectedIndexes = selectedPositions.mapIndexedNotNull { index, isSelected ->
+        index.takeIf { isSelected && index < countNumberLength }
+    }
+    if (selectedIndexes.isEmpty()) {
         return emptySet()
     }
 
-    val fixedCount = confirmFixedCount.toIntOrNull() ?: return emptySet()
-    if (fixedCount !in 0..3) {
-        return emptySet()
-    }
-
-    val replaceCount = countNumberLength - fixedCount
     val expandedResults = linkedSetOf<String>()
 
     filteredResults.forEach { result ->
@@ -329,9 +338,7 @@ private fun applyConfirmFixedCount(
 
         appendConfirmedPatterns(
             source = result,
-            replaceCount = replaceCount,
-            startIndex = 0,
-            selectedIndexes = mutableListOf(),
+            selectedIndexes = selectedIndexes,
             resultCollector = expandedResults
         )
     }
@@ -341,31 +348,18 @@ private fun applyConfirmFixedCount(
 
 private fun appendConfirmedPatterns(
     source: String,
-    replaceCount: Int,
-    startIndex: Int,
-    selectedIndexes: MutableList<Int>,
+    selectedIndexes: List<Int>,
     resultCollector: MutableSet<String>,
 ) {
-    if (selectedIndexes.size == replaceCount) {
-        val chars = source.toCharArray()
-        selectedIndexes.forEach { index ->
-            chars[index] = 'X'
-        }
-        resultCollector += chars.concatToString()
+    if (source.length != countNumberLength) {
         return
     }
 
-    for (index in startIndex until countNumberLength) {
-        selectedIndexes += index
-        appendConfirmedPatterns(
-            source = source,
-            replaceCount = replaceCount,
-            startIndex = index + 1,
-            selectedIndexes = selectedIndexes,
-            resultCollector = resultCollector
-        )
-        selectedIndexes.removeAt(selectedIndexes.lastIndex)
+    val chars = source.toCharArray()
+    selectedIndexes.forEach { index ->
+        chars[index] = 'X'
     }
+    resultCollector += chars.concatToString()
 }
 
 private fun shouldDeleteResult(
